@@ -2,6 +2,7 @@
 Configuration settings for the paperwork generation API.
 """
 
+import logging
 import os
 from pathlib import Path
 
@@ -21,13 +22,6 @@ class Settings:
         self.output_dir = Path(
             os.getenv("PAPERWORK_OUTPUT_DIR", self.base_dir / "output")
         ).expanduser()
-        
-        # Ensure directories exist
-        self.templates_dir.mkdir(parents=True, exist_ok=True)
-        self.signatures_dir.mkdir(parents=True, exist_ok=True)
-        self.sig1_dir.mkdir(parents=True, exist_ok=True)
-        self.sig2_dir.mkdir(parents=True, exist_ok=True)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # API settings
         self.api_title = "Paperwork Generation API"
@@ -66,6 +60,23 @@ class Settings:
     def pdf_enabled(self) -> bool:
         """Whether LibreOffice PDF conversion should run."""
         return os.getenv("PAPERWORK_DISABLE_PDF", "false").lower() != "true"
+
+
+def create_app_directories(settings: "Settings"):
+    """Create the necessary directories for the application."""
+    logger = logging.getLogger("paperworkgen")
+    try:
+        settings.templates_dir.mkdir(parents=True, exist_ok=True)
+        settings.signatures_dir.mkdir(parents=True, exist_ok=True)
+        settings.sig1_dir.mkdir(parents=True, exist_ok=True)
+        settings.sig2_dir.mkdir(parents=True, exist_ok=True)
+        settings.output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info("Application directories created successfully.")
+    except PermissionError:
+        logger.warning(
+            "Could not create application directories due to a permission error. "
+            "Please ensure the user running the application has write access to the volume."
+        )
 
 
 # Global settings instance

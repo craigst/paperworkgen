@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .config import get_settings
+from .config import get_settings, create_app_directories
 from .schemas import (
     LoadsheetRequest,
     TimesheetRequest,
@@ -33,6 +33,9 @@ logger = logging.getLogger("paperworkgen")
 
 # Get settings
 settings = get_settings()
+
+# Create application directories
+create_app_directories(settings)
 
 # Create FastAPI app
 app = FastAPI(
