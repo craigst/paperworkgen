@@ -6,7 +6,7 @@ Handles Excel template population and PDF conversion for loadsheets.
 
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from openpyxl import load_workbook
 
@@ -110,12 +110,18 @@ def generate_loadsheet(request: LoadsheetRequest) -> GenerateResponse:
     add_signature(ws, sig2_path, "H42")
 
     wb.save(excel_path)
+    pdf_path: Optional[str] = None
+    if request.include_pdf:
+        pdf_result = convert_excel_to_pdf(excel_path, folder)
+        if pdf_result:
+            pdf_path = str(pdf_result)
+        else:
+            message = "Loadsheet generated (Excel only - PDF conversion failed or disabled)"
+    else:
+        message = "Loadsheet generated (Excel only - PDF conversion skipped per request)"
 
-    pdf_path = convert_excel_to_pdf(excel_path, folder)
-
-    message = "Loadsheet generated successfully"
-    if pdf_path is None:
-        message = "Loadsheet generated (Excel only - PDF conversion failed or skipped)"
+    if request.include_pdf and pdf_path:
+        message = "Loadsheet generated successfully"
 
     return GenerateResponse(
         excel_path=str(excel_path),

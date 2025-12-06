@@ -32,6 +32,10 @@ class LoadsheetRequest(BaseModel):
     delivery_point: str = Field(..., description="Delivery location name")
     fleet_reg: str = Field(..., description="Fleet registration number")
     load_notes: str = Field(default="", description="General notes for the load")
+    include_pdf: bool = Field(
+        default=True,
+        description="Request PDF output alongside Excel (requires LibreOffice)",
+    )
     sig1: str = Field(default="random", description="Signature 1 path or 'random'")
     sig2: str = Field(default="random", description="Signature 2 path or 'random'")
     cars: List[CarModel] = Field(..., description="List of cars on the load")
@@ -87,18 +91,20 @@ class TimesheetRequest(BaseModel):
     weekly_total_hours: Optional[str] = Field(
         None, description="Optional weekly total hours (overrides auto-sum)"
     )
-    sig1: str = Field(default="random", description="Signature 1 path or 'random'")
-    sig2: str = Field(default="random", description="Signature 2 path or 'random'")
     days: List[DayModel] = Field(..., description="Daily time and load data")
+    include_pdf: bool = Field(
+        default=True,
+        description="Request PDF output alongside Excel (requires LibreOffice)",
+    )
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, skip_on_failure=True)
     def ensure_week_alias(cls, values):
         """Accept either week_ending or week_end_date."""
         if not values.get("week_ending") and values.get("week_end_date"):
             values["week_ending"] = values["week_end_date"]
         return values
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def require_week_ending(cls, values):
         if not values.get("week_ending"):
             raise ValueError("week_ending (or week_end_date) is required for timesheets")

@@ -11,7 +11,7 @@ This FastAPI service generates loadsheets and timesheets (Excel + optional PDFs)
    pip install -r requirements.txt
    ```
 2. Install `libreoffice` if you need PDF output (or set `PAPERWORK_DISABLE_PDF=true` to skip conversion).
-3. Ensure `templates/loadsheet.xlsx`, `templates/timesheet.xlsx`, and the signature folders (`signatures/sig1`, `signatures/sig2`) mirror the legacy structure described in `/home/craigst/Nextcloud/Documents/projects/sql_host/loadsheet.md`, `/home/craigst/Nextcloud/Documents/projects/sql_host/timesheet.md`, and `/home/craigst/Nextcloud/Documents/projects/sql-to-docs/`.
+3. Ensure `templates/loadsheet.xlsx`, `templates/timesheet.xlsx`, and the signature folders (`signatures/sig1`, `signatures/sig2`) mirror the legacy structure described in `/home/craigst/Nextcloud/Documents/projects/sql_host/loadsheet.md`, `/home/craigst/Nextcloud/Documents/projects/sql_host/timesheet.md`, and `/home/craigst/Nextcloud/Documents/projects/sql-to-docs/` (signature images are only used for loadsheets).
 4. Configure optional environment overrides:
    - `PAPERWORK_OUTPUT_DIR` (default: `output/`)
    - `PAPERWORK_TEMPLATES_DIR`
@@ -29,9 +29,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 The key endpoints are:
 
-- `POST /api/loadsheet/generate` – supply `load_date`, `load_number`, `collection_point`, `delivery_point`, `fleet_reg`, `cars`, and optional `sig1`, `sig2`, `load_notes`.
-- `POST /api/timesheet/generate` – supply `week_ending`, `driver`, `fleet_reg`, optional `weekly_total_hours`, `start_mileage`, `end_mileage`, and per-day `loads` matching the old `DayModel`/`LoadModel`.
+- `POST /api/loadsheet/generate` – supply `load_date`, `load_number`, `collection_point`, `delivery_point`, `fleet_reg`, `cars`, and optional `sig1`, `sig2`, `load_notes`, `include_pdf`.
+- `POST /api/timesheet/generate` – supply `week_ending`, `driver`, `fleet_reg`, optional `weekly_total_hours`, `start_mileage`, `end_mileage`, per-day `loads`, and `include_pdf`.
 - `GET /api/signatures` – lists images under `signatures/sig1` and `sig2`.
+
+Use `docs/cell_mapping.md` when you build payloads so you can see the human-readable JSON → Excel cell pairs for both templates, and keep the legacy `sql_host`/`sql-to-docs` documentation open as your authoritative reference.
 
 ### Output
 

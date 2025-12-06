@@ -6,21 +6,20 @@ Handles Excel template population and PDF conversion for weekly timesheets.
 
 import logging
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 from openpyxl import load_workbook
+from openpyxl.cell import MergedCell
 
 from ..config import get_settings
 from ..schemas import DayModel, LoadModel, TimesheetRequest, GenerateResponse
 from .helpers import (
-    add_signature,
     convert_excel_to_pdf,
     ensure_output_folder,
     format_date_for_cell,
     format_folder_date,
     get_week_end_from_date,
     sanitize_filename,
-    select_signature,
 )
 
 logger = logging.getLogger("paperworkgen.services.timesheet")
@@ -93,7 +92,17 @@ def generate_timesheet(request: TimesheetRequest) -> GenerateResponse:
     ws = wb.active
 
     ws["E5"] = format_date_for_cell(week_end)
-    ws["H2"] = request.driver.upper()
+    driver_cell = ws["H2"]
+    if isinstance(driver_cell, MergedCell):
+        for merged_range in ws.merged_cells.ranges:
+            if driver_cell.coordinate in merged_range:
+                top_left = ws.cell(row=merged_range.min_row, column=merged_range.min_col)
+                top_left.value = request.driver.upper()
+                break
+        else:
+            ws.cell(row=2, column=8).value = request.driver.upper()
+    else:
+        driver_cell.value = request.driver.upper()
     fleet_regs = ", ".join(dict.fromkeys([reg.upper() for reg in request.fleet_reg]))
     ws["K5"] = fleet_regs
     ws["H4"] = request.start_mileage
@@ -170,18 +179,20 @@ def generate_timesheet(request: TimesheetRequest) -> GenerateResponse:
         weekly_total = _calculate_total_hours(request.days)
         ws["J29"] = str(weekly_total)
 
-    sig1_path = select_signature(request.sig1, settings.sig1_dir)
-    sig2_path = select_signature(request.sig2, settings.sig2_dir)
-    add_signature(ws, sig1_path, "C42")
-    add_signature(ws, sig2_path, "H42")
-
     wb.save(excel_path)
 
-    pdf_path = convert_excel_to_pdf(excel_path, folder)
+    pdf_path: Optional[str] = None
+    if request.include_pdf:
+        pdf_result = convert_excel_to_pdf(excel_path, folder)
+        if pdf_result:
+            pdf_path = str(pdf_result)
+        else:
+            message = "Timesheet generated (Excel only - PDF conversion failed or disabled)"
+    else:
+        message = "Timesheet generated (Excel only - PDF conversion skipped per request)"
 
-    message = "Timesheet generated successfully"
-    if pdf_path is None:
-        message = "Timesheet generated (Excel only - PDF conversion failed or skipped)"
+    if request.include_pdf and pdf_path:
+        message = "Timesheet generated successfully"
 
     return GenerateResponse(
         excel_path=str(excel_path),

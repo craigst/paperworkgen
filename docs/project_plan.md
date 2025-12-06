@@ -6,7 +6,8 @@
 3. Add reproducible tooling (tests, Dockerfile, build script, plan doc) so analysts, admins, and future AI agents can continue iterating using the referenced documentation.
 
 ## 2. Implementation tasks
-- Describe the JSON-to-cell mappings alongside the plan document so developers can confirm whether `LoadsheetRequest`/`TimesheetRequest` require new fields (e.g., `load_notes`, `weekly_total_hours`) or additional validation.
+- Describe the JSON-to-cell mappings alongside the plan document so developers can confirm whether `LoadsheetRequest`/`TimesheetRequest` require new fields (e.g., `load_notes`, `weekly_total_hours`) or additional validation; capture those mappings in `docs/cell_mapping.md`.
+- Add and document the `include_pdf` flag per request so callers decide whether LibreOffice runs for each generation call.
 - Ensure every load/time field maps to the Excel coordinates described in `loadsheet.md`, `timesheet.md`, `loadsheetguide.md`, and `timesheetguide.md`, then lock that mapping inside the helper/service layer.
 - Wire in a flexible configuration layer that respects `PAPERWORK_OUTPUT_DIR`, `PAPERWORK_SIGNATURES_DIR`, and the `PAPERWORK_DISABLE_PDF` toggle, so deployments can disable LibreOffice or redirect outputs without code changes.
 - Add regression tests that exercise the sample payloads (from the guides) and confirm both Excel and optional PDF metadata are returned.
