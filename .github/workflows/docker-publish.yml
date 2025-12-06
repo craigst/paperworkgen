@@ -3,7 +3,7 @@ name: Docker Publish
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build_and_push:
@@ -27,8 +27,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: craigst
-          password: ${{ secrets.GHCR_PAT }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image
         uses: docker/build-push-action@v5
