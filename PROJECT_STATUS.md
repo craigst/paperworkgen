@@ -1,0 +1,435 @@
+# Paperwork Generation API - Project Status & Tasks
+
+> **Last Updated**: 2025-12-12 00:58:00 UTC  
+> **Status**: ✅ Core Implementation Complete - IPv6 Networking Issue Identified
+
+---
+
+## 🤖 AI Agent Instructions
+
+**READ THIS FIRST**: This file tracks the current state of the Paperwork Generation API project. 
+
+### For AI Agents Working on This Project:
+
+1. **Read this entire file** before starting any work
+2. **Update this file** after completing tasks, fixing bugs, or identifying issues
+3. **Mark tasks as complete** by changing `- [ ]` to `- [x]`
+4. **Add new issues** to the "Known Issues" section as you discover them
+5. **Update the "Last Updated" timestamp** at the top
+6. **Document all commands** you use in the relevant sections
+
+---
+
+## 📋 Project Overview
+
+**Name**: Paperwork Generation HTTP API  
+**Purpose**: FastAPI service that generates Excel and PDF loadsheets/timesheets from JSON input  
+**Repository**: https://github.com/craigst/paperworkgen  
+**Docker Image**: `ghcr.io/craigst/paperworkgen:latest`  
+**Remote Server**: craigst@10.10.254.81
+
+### Architecture
+- **Backend**: FastAPI (Python 3.12)
+- **Excel Processing**: openpyxl
+- **PDF Generation**: LibreOffice (headless)
+- **Containerization**: Docker/Podman
+- **CI/CD**: GitHub Actions
+
+---
+
+## ✅ Completed Tasks
+
+- [x] Set up project structure with FastAPI
+- [x] Create Pydantic schemas for loadsheet and timesheet
+- [x] Implement loadsheet generation service
+- [x] Implement timesheet service
+- [x] Create Excel template cell mapping
+- [x] Add signature handling (random selection or custom path)
+- [x] Set up Dockerfile with LibreOffice
+- [x] Configure GitHub Actions for Docker builds
+- [x] Create API endpoints (/api/loadsheet/generate, /api/timesheet/generate, /api/health)
+- [x] Copy Excel templates from reference projects
+- [x] Copy signature images from reference projects
+- [x] Initialize Git repository
+- [x] Test Docker build locally
+- [x] Verify container starts successfully
+- [x] Confirm API responds (via IPv4)
+
+---
+
+## 🔄 Current Tasks
+
+### High Priority
+- [ ] Fix IPv6 networking issue in container
+- [ ] Test loadsheet generation with sample JSON data
+- [ ] Test timesheet generation with sample JSON data
+- [ ] Verify PDF generation works correctly
+- [ ] Deploy fixed container to remote server (10.10.254.81)
+
+### Medium Priority
+- [ ] Create comprehensive API tests
+- [ ] Add error handling for missing templates
+- [ ] Implement logging for PDF conversion failures
+- [ ] Create docker-compose.yml for easy local development
+- [ ] Write API usage examples in documentation
+
+### Low Priority
+- [ ] Add support for more than 8 cars in loadsheet
+- [ ] Implement batch processing endpoint
+- [ ] Add webhook notifications for completed paperwork
+- [ ] Create web UI for manual testing
+
+---
+
+## ⚠️ Known Issues
+
+### 1. IPv6 Networking Problem (HIGH PRIORITY)
+**Status**: Identified but not fixed  
+**Symptom**: API connections via IPv6 (::1) result in "Connection reset by peer"  
+**Workaround**: Use IPv4 explicitly with `curl -4`  
+**Impact**: Prevents normal API access without forcing IPv4
+
+**Fix Options**:
+```dockerfile
+# Option 1: Modify Dockerfile CMD
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Option 2: Add environment variable
+ENV UVICORN_HOST=0.0.0.0
+
+# Option 3: Use --network=host when running container
+podman run --network=host ghcr.io/craigst/paperworkgen:latest
+```
+
+### 2. Remote Server Container Not Running
+**Status**: Container stopped/removed  
+**Location**: 10.10.254.81  
+**Last Known State**: Crash loop due to ModuleNotFoundError (now fixed in latest build)
+
+---
+
+## 🧪 Testing Checklist
+
+### Docker Build & Run
+- [x] Build image locally: `podman build -t paperworkgen:test .`
+- [x] Run container: `podman run -d -p 8000:8000 paperworkgen:test`
+- [x] Container starts without errors
+- [x] Uvicorn starts successfully
+- [x] Logs show clean startup
+
+### API Endpoints
+- [x] Root endpoint: `curl -4 http://localhost:8000/`
+- [x] Health endpoint: `curl -4 http://localhost:8000/api/health`
+- [ ] Loadsheet generation: `curl -4 -X POST http://localhost:8000/api/loadsheet/generate -H "Content-Type: application/json" -d @test_loadsheet.json`
+- [ ] Timesheet generation: `curl -4 -X POST http://localhost:8000/api/timesheet/generate -H "Content-Type: application/json" -d @test_timesheet.json`
+- [ ] Signatures list: `curl -4 http://localhost:8000/api/signatures`
+- [ ] API documentation: `curl -4 http://localhost:8000/docs`
+
+### PDF Generation
+- [ ] Verify LibreOffice is installed in container
+- [ ] Test Excel to PDF conversion
+- [ ] Confirm PDF output is readable
+- [ ] Check PDF file size is reasonable
+
+### File Generation
+- [ ] Verify Excel files are created in output directory
+- [ ] Confirm correct week folder structure (DD-MM-YY)
+- [ ] Check Excel files open correctly
+- [ ] Validate cell mapping is accurate
+- [ ] Confirm signatures are embedded correctly
+
+---
+
+## 🚀 Deployment Commands
+
+### Local Development
+
+```bash
+# Build Docker image
+cd paperworkgen
+podman build -t paperworkgen:test .
+
+# Run container
+podman run -d --name paperworkgen-test -p 8000:8000 localhost/paperworkgen:test
+
+# View logs
+podman logs paperworkgen-test
+
+# Stop container
+podman stop paperworkgen-test
+
+# Remove container
+podman rm paperworkgen-test
+
+# Clean up
+podman rmi localhost/paperworkgen:test
+```
+
+### GitHub Actions (Automatic)
+
+GitHub Actions automatically builds and pushes to `ghcr.io/craigst/paperworkgen:latest` on push to master branch.
+
+**Workflow file**: `.github/workflows/docker-publish.yml`
+
+```bash
+# Trigger build by pushing to master
+git add .
+git commit -m "Your commit message"
+git push origin master
+
+# Monitor build at: https://github.com/craigst/paperworkgen/actions
+```
+
+### Manual Docker Registry Push
+
+```bash
+# Build for multiple architectures
+podman build --platform linux/amd64,linux/arm64 -t ghcr.io/craigst/paperworkgen:latest .
+
+# Login to GitHub Container Registry
+echo $GITHUB_TOKEN | podman login ghcr.io -u craigst --password-stdin
+
+# Push image
+podman push ghcr.io/craigst/paperworkgen:latest
+```
+
+### Remote Server Deployment
+
+```bash
+# SSH to remote server
+ssh craigst@10.10.254.81
+
+# Pull latest image
+docker pull ghcr.io/craigst/paperworkgen:latest
+
+# Stop old container (if exists)
+docker stop btt-paperwork-paperwork-1
+docker rm btt-paperwork-paperwork-1
+
+# Run new container
+docker run -d \
+  --name paperwork-api \
+  --restart unless-stopped \
+  -p 8000:8000 \
+  -v /path/to/output:/app/output \
+  -v /path/to/templates:/app/templates \
+  -v /path/to/signatures:/app/signatures \
+  ghcr.io/craigst/paperworkgen:latest
+
+# Check logs
+docker logs paperwork-api
+
+# Check status
+docker ps | grep paperwork
+```
+
+### Testing Remote Deployment
+
+```bash
+# From local machine
+ssh craigst@10.10.254.81 "curl -4 http://localhost:8000/api/health"
+
+# Or via public IP (if exposed)
+curl -4 http://10.10.254.81:8000/api/health
+```
+
+---
+
+## 📝 API Usage Examples
+
+### Test Loadsheet Generation
+
+Create `test_loadsheet.json`:
+```json
+{
+  "load_date": "2025-12-12",
+  "load_number": "$S123456",
+  "collection_point": "WBAC Maidstone",
+  "delivery_point": "BTT Yard",
+  "fleet_reg": "Y6BTT",
+  "sig1": "random",
+  "sig2": "random",
+  "cars": [
+    {
+      "reg": "AB12CDE",
+      "make_model": "Ford Focus",
+      "offloaded": "N",
+      "docs": "Y",
+      "spare_keys": "Y",
+      "car_notes": "Clean vehicle"
+    },
+    {
+      "reg": "CD34EFG",
+      "make_model": "Vauxhall Astra",
+      "offloaded": "N",
+      "docs": "N",
+      "spare_keys": "Y",
+      "car_notes": "Docs with office"
+    }
+  ]
+}
+```
+
+Test:
+```bash
+curl -4 -X POST http://localhost:8000/api/loadsheet/generate \
+  -H "Content-Type: application/json" \
+  -d @test_loadsheet.json | jq .
+```
+
+### Test Timesheet Generation
+
+Create `test_timesheet.json`:
+```json
+{
+  "week_ending": "2025-12-14",
+  "driver": "CRAIG",
+  "fleet_reg": "Y6BTT",
+  "start_mileage": "12500",
+  "end_mileage": "12820",
+  "sig1": "random",
+  "sig2": "random",
+  "days": [
+    {
+      "day": "Monday",
+      "start_time": "07:30",
+      "finish_time": "16:15",
+      "total_hours": "8.75",
+      "loads": [
+        {
+          "customer": "WBAC",
+          "car_count": 2,
+          "collection": "Didcot",
+          "delivery": "BTT Yard"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "start_time": "07:00",
+      "finish_time": "15:30",
+      "total_hours": "8.5",
+      "loads": [
+        {
+          "customer": "WBAC",
+          "car_count": 3,
+          "collection": "Crawley",
+          "delivery": "BTT Yard"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Test:
+```bash
+curl -4 -X POST http://localhost:8000/api/timesheet/generate \
+  -H "Content-Type: application/json" \
+  -d @test_timesheet.json | jq .
+```
+
+---
+
+## 📚 Reference Documentation
+
+- **API Documentation**: `/docs` endpoint (Swagger UI)
+- **Cell Mapping**: `docs/cell_mapping.md`
+- **Project Plan**: `docs/project_plan.md`
+- **API Reference**: `docs/api.md`
+
+### Original Reference Projects
+- `/home/craigst/Nextcloud/Documents/projects/sql_host/`
+- `/home/craigst/Nextcloud/Documents/projects/sql-to-docs/`
+
+---
+
+## 🔧 Troubleshooting
+
+### Container Won't Start
+```bash
+# Check logs
+podman logs paperworkgen-test
+
+# Common issues:
+# 1. Port already in use - change port mapping
+# 2. Missing templates - check volume mounts
+# 3. Permission issues - check file ownership
+```
+
+### API Not Responding
+```bash
+# Force IPv4
+curl -4 http://localhost:8000/api/health
+
+# Check if container is running
+podman ps | grep paperwork
+
+# Check port mapping
+podman port paperworkgen-test
+```
+
+### PDF Generation Fails
+```bash
+# Verify LibreOffice is installed
+podman exec paperworkgen-test which libreoffice
+
+# Check LibreOffice version
+podman exec paperworkgen-test libreoffice --version
+
+# Test manual conversion
+podman exec paperworkgen-test libreoffice --headless --convert-to pdf test.xlsx
+```
+
+---
+
+## 🎯 Success Criteria
+
+The project is considered complete when:
+
+- [ ] IPv6 networking issue is resolved
+- [ ] API responds without requiring `-4` flag
+- [ ] Loadsheet generation works end-to-end (JSON → Excel → PDF)
+- [ ] Timesheet generation works end-to-end (JSON → Excel → PDF)
+- [ ] Container runs successfully on remote server (10.10.254.81)
+- [ ] All API endpoints return appropriate responses
+- [ ] Error handling is comprehensive
+- [ ] Documentation is complete and accurate
+- [ ] CI/CD pipeline successfully builds and deploys
+
+---
+
+## 📞 Key Information
+
+**Git Repository**: `/home/craigst/Nextcloud/Documents/projects/paperworkgen/paperworkgen`  
+**Docker Registry**: `ghcr.io/craigst/paperworkgen`  
+**Remote Server**: `craigst@10.10.254.81`  
+**Container Port**: `8000`  
+**Template Location**: `/app/templates/`  
+**Output Location**: `/app/output/`  
+**Signature Location**: `/app/signatures/`
+
+---
+
+## 🤖 AI Agent Update Protocol
+
+When updating this file:
+
+1. Update the "Last Updated" timestamp at the top
+2. Mark completed tasks with `[x]`
+3. Add new issues to "Known Issues" with detailed descriptions
+4. Document any new commands you used
+5. Update testing checklists with results
+6. Add troubleshooting steps for any errors encountered
+7. Commit the changes with a descriptive message
+
+**Example commit**:
+```bash
+git add PROJECT_STATUS.md
+git commit -m "Update PROJECT_STATUS: Fixed IPv6 issue, completed API tests"
+git push origin master
+```
+
+---
+
+*This document is a living file - keep it updated as the project evolves.*
