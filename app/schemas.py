@@ -151,3 +151,27 @@ class SignatureListResponse(BaseModel):
     """Response model for signature list."""
     sig1_images: List[str] = Field(..., description="Available signature 1 images")
     sig2_images: List[str] = Field(..., description="Available signature 2 images")
+
+
+class SettingsResponse(BaseModel):
+    """Response model for runtime settings (non-secret)."""
+    host: str = Field(..., description="Current host binding")
+    port: int = Field(..., description="Current port")
+    output_dir: str = Field(..., description="Output directory path")
+    templates_dir: str = Field(..., description="Templates directory path")
+    signatures_dir: str = Field(..., description="Signatures directory path")
+    pdf_enabled: bool = Field(..., description="Whether PDF conversion is enabled")
+    api_version: str = Field(..., description="API version")
+    message: str = Field(..., description="Status message")
+
+
+class SettingsUpdateRequest(BaseModel):
+    """Request to update runtime settings."""
+    pdf_enabled: Optional[bool] = Field(
+        None,
+        description="Override PDF conversion toggle at runtime (true enables LibreOffice)",
+    )
+    reset_pdf_override: bool = Field(
+        default=False,
+        description="Reset PDF toggle to environment default",
+    )

@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  paperworkgen:
+    image: ghcr.io/craigst/paperworkgen:latest
+    ports:
+      - "8000:8000"
+    environment:
+      HOST: "::"
+      PORT: "8000"
+      PAPERWORK_OUTPUT_DIR: /app/output
+      PAPERWORK_TEMPLATES_DIR: /app/templates
+      PAPERWORK_SIGNATURES_DIR: /app/signatures
+    volumes:
+      - /home/craigst/paperworkgen/output:/app/output
+      - /home/craigst/paperworkgen/templates:/app/templates
+      - /home/craigst/paperworkgen/signatures:/app/signatures
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,urllib.request;sys.exit(0) if urllib.request.urlopen('http://localhost:8000/api/health',timeout=5).status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

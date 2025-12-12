@@ -56,6 +56,36 @@ Generate a loadsheet workbook (and optional PDF) by mapping each car entry to th
 - `sig1`/`sig2` accept `"random"` to pull from `signatures/sig1`/`sig2` or a direct path to an image.
 - The repository`s `docs/cell_mapping.md` captures the JSON-to-cell mapping for every field listed above.
 
+## GET /api/settings
+
+Returns non-secret runtime configuration (host, port, directories, PDF toggle).
+
+```json
+{
+  "host": "::",
+  "port": 8000,
+  "output_dir": "/app/output",
+  "templates_dir": "/app/templates",
+  "signatures_dir": "/app/signatures",
+  "pdf_enabled": true,
+  "api_version": "1.0.0",
+  "message": "Current settings"
+}
+```
+
+## POST /api/settings
+
+Update runtime settings (currently limited to the PDF toggle; host/port changes still require a restart).
+
+```json
+{
+  "pdf_enabled": false,
+  "reset_pdf_override": false
+}
+```
+
+Set `pdf_enabled` to override the runtime PDF toggle, or send `{"reset_pdf_override": true}` to fall back to the environment value `PAPERWORK_DISABLE_PDF`.
+
 ## POST /api/timesheet/generate
 
 ### Description

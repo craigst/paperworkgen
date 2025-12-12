@@ -5,6 +5,7 @@ Configuration settings for the paperwork generation API.
 import logging
 import os
 from pathlib import Path
+from typing import Optional
 
 
 class Settings:
@@ -29,12 +30,13 @@ class Settings:
         self.api_description = "HTTP API for generating loadsheets and timesheets from JSON data"
         
         # Server settings
-        self.host = os.getenv("HOST", "0.0.0.0")
+        self.host = os.getenv("HOST", "::")
         self.port = int(os.getenv("PORT", "8000"))
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
         
         # LibreOffice settings for PDF conversion
         self.libreoffice_timeout = 60
+        self._pdf_enabled_override: Optional[bool] = None
         
     @property
     def sig1_dir(self) -> Path:
@@ -59,7 +61,17 @@ class Settings:
     @property
     def pdf_enabled(self) -> bool:
         """Whether LibreOffice PDF conversion should run."""
+        if self._pdf_enabled_override is not None:
+            return self._pdf_enabled_override
         return os.getenv("PAPERWORK_DISABLE_PDF", "false").lower() != "true"
+
+    def set_pdf_enabled(self, enabled: bool) -> None:
+        """Override PDF conversion toggle at runtime."""
+        self._pdf_enabled_override = bool(enabled)
+
+    def clear_pdf_override(self) -> None:
+        """Clear any PDF override, falling back to environment variable."""
+        self._pdf_enabled_override = None
 
 
 def create_app_directories(settings: "Settings"):

@@ -4,6 +4,8 @@ This FastAPI service generates loadsheets and timesheets (Excel + optional PDFs)
 
 ## Setup
 
+Use Python 3.12 (matches the Dockerfile). The pinned `pydantic-core` release may not build cleanly on Python 3.13.
+
 1. Create a virtual environment and install dependencies:
    ```bash
    python -m venv .venv
@@ -24,7 +26,8 @@ This FastAPI service generates loadsheets and timesheets (Excel + optional PDFs)
 Start the server:
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host :: --port 8000
+# Use --host 0.0.0.0 if your host lacks IPv6 support
 ```
 
 The key endpoints are:
@@ -32,6 +35,8 @@ The key endpoints are:
 - `POST /api/loadsheet/generate` – supply `load_date`, `load_number`, `collection_point`, `delivery_point`, `fleet_reg`, `cars`, and optional `sig1`, `sig2`, `load_notes`, `include_pdf`.
 - `POST /api/timesheet/generate` – supply `week_ending`, `driver`, `fleet_reg`, optional `weekly_total_hours`, `start_mileage`, `end_mileage`, per-day `loads`, and `include_pdf`.
 - `GET /api/signatures` – lists images under `signatures/sig1` and `sig2`.
+- `GET /api/settings` – returns current runtime config (host/port/dirs/PDF toggle).
+- `POST /api/settings` – overrides the PDF toggle at runtime or resets to the environment default (`PAPERWORK_DISABLE_PDF`).
 
 Use `docs/cell_mapping.md` when you build payloads so you can see the human-readable JSON → Excel cell pairs for both templates, and keep the legacy `sql_host`/`sql-to-docs` documentation open as your authoritative reference.
 

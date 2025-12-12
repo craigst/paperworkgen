@@ -20,6 +20,8 @@ from .schemas import (
     GenerateResponse,
     HealthResponse,
     SignatureListResponse,
+    SettingsResponse,
+    SettingsUpdateRequest,
 )
 from .services.loadsheet import generate_loadsheet
 from .services.timesheet import generate_timesheet
@@ -75,6 +77,49 @@ async def health_check():
         timestamp=datetime.now(),
         version=settings.api_version
     )
+
+
+def _build_settings_response(message: str) -> SettingsResponse:
+    """Compose a non-secret settings payload."""
+    return SettingsResponse(
+        host=settings.host,
+        port=settings.port,
+        output_dir=str(settings.output_dir),
+        templates_dir=str(settings.templates_dir),
+        signatures_dir=str(settings.signatures_dir),
+        pdf_enabled=settings.pdf_enabled,
+        api_version=settings.api_version,
+        message=message,
+    )
+
+
+@app.get("/api/settings", response_model=SettingsResponse, summary="Get current runtime settings")
+async def get_settings():
+    """Return non-secret runtime configuration values."""
+    return _build_settings_response("Current settings")
+
+
+@app.post("/api/settings", response_model=SettingsResponse, summary="Update runtime settings")
+async def update_settings(request: SettingsUpdateRequest):
+    """
+    Update runtime settings (currently limited to PDF toggle). Host/port changes still require a restart.
+    """
+    try:
+        changed = False
+        if request.reset_pdf_override:
+            settings.clear_pdf_override()
+            changed = True
+        if request.pdf_enabled is not None:
+            settings.set_pdf_enabled(request.pdf_enabled)
+            changed = True
+        if not changed:
+            raise HTTPException(status_code=400, detail="No settings provided to update")
+        return _build_settings_response("Settings updated")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating settings: {e}")
+        raise HTTPException(status_code=500, detail="Error updating settings")
 
 
 @app.post("/api/loadsheet/generate", response_model=GenerateResponse, summary="Generate loadsheet")
