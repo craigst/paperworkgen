@@ -1,6 +1,6 @@
 # Paperwork Generation API - Project Status & Tasks
 
-> **Last Updated**: 2025-12-12 01:43:40 UTC  
+> **Last Updated**: 2025-12-12 02:40:50 UTC  
 > **Status**: ✅ Core Implementation Complete - IPv6 binding updated (retest pending)
 
 ---
@@ -165,6 +165,12 @@
 - `ssh craigst@10.10.254.81 "docker stop btt-paperwork-paperworkgen-1 && docker rm btt-paperwork-paperworkgen-1"` (remove old container)
 - `ssh craigst@10.10.254.81 "docker run -d --name paperworkgen-app --restart unless-stopped -p 8000:8000 -e HOST='0.0.0.0' -e PORT=8000 -e PAPERWORK_OUTPUT_DIR=/app/output -e PAPERWORK_TEMPLATES_DIR=/app/templates -e PAPERWORK_SIGNATURES_DIR=/app/signatures -v /home/craigst/paperworkgen/output:/app/output -v /home/craigst/paperworkgen/templates:/app/templates -v /home/craigst/paperworkgen/signatures:/app/signatures ghcr.io/craigst/paperworkgen:latest"` (deploy new image manually; host lacks compose/swarm)
 - `ssh craigst@10.10.254.81 "curl -s -o /dev/null -w '%{http_code}\\n' http://localhost:8000/api/health"` and `curl -f http://10.10.254.81:8000/api/health` (verify health 200)
+- `docker build --target test .` (regression after loadsheet note adjustments)
+- `docker build -t ghcr.io/craigst/paperworkgen:latest .` (includes Pillow + overwrites + permissions)
+- `docker save ghcr.io/craigst/paperworkgen:latest | ssh craigst@10.10.254.81 "docker load"` (refresh remote image)
+- `ssh craigst@10.10.254.81 "docker rm -f paperworkgen-app"` (replace running container)
+- `ssh craigst@10.10.254.81 "docker run -d --user 1000:1000 --name paperworkgen-app --restart unless-stopped -p 8000:8000 -e HOST='0.0.0.0' -e PORT=8000 -e PAPERWORK_OUTPUT_DIR=/app/output -e PAPERWORK_TEMPLATES_DIR=/app/templates -e PAPERWORK_SIGNATURES_DIR=/app/signatures -v /home/craigst/paperworkgen/output:/app/output -v /home/craigst/paperworkgen/templates:/app/templates -v /home/craigst/paperworkgen/signatures:/app/signatures ghcr.io/craigst/paperworkgen:latest"` (run as host UID/GID to keep files editable)
+- `docker run -i --rm ... ghcr.io/craigst/paperworkgen:latest python - <<'PY' ...` (local test generation with sample payload; outputs under output/14-12-25/)
 
 ---
 

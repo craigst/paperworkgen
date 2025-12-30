@@ -16,6 +16,7 @@ from .helpers import (
     add_signature,
     convert_excel_to_pdf,
     ensure_output_folder,
+    ensure_writable,
     format_date_for_cell,
     format_folder_date,
     get_week_end_from_date,
@@ -95,21 +96,23 @@ def generate_loadsheet(request: LoadsheetRequest) -> GenerateResponse:
                 ws[cell] = ""
 
     summary = _generate_load_summary(request.cars)
-    notes = [summary]
-    if request.load_notes.strip():
-        notes.append(request.load_notes.strip())
-    for car in request.cars:
-        if car.car_notes.strip():
-            notes.append(car.car_notes.upper())
-
-    ws["C39"] = "\n".join(notes).upper()
+    user_notes = request.load_notes.strip()
+    # Prefer caller-provided load_notes if present; otherwise use auto summary.
+    final_note = user_notes if user_notes else summary
+    ws["C39"] = final_note.upper()
 
     sig1_path = select_signature(request.sig1, settings.sig1_dir)
     sig2_path = select_signature(request.sig2, settings.sig2_dir)
     add_signature(ws, sig1_path, "C42")
     add_signature(ws, sig2_path, "H42")
 
+    if excel_path.exists():
+        try:
+            excel_path.unlink()
+        except OSError:
+            logger.warning("Unable to remove existing loadsheet %s", excel_path)
     wb.save(excel_path)
+    ensure_writable(excel_path)
     pdf_path: Optional[str] = None
     if request.include_pdf:
         pdf_result = convert_excel_to_pdf(excel_path, folder)

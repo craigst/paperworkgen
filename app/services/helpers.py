@@ -3,6 +3,7 @@ Shared helpers for paperwork generation services.
 """
 
 import logging
+import os
 import random
 import re
 import subprocess
@@ -36,6 +37,10 @@ def ensure_output_folder(date: datetime) -> Path:
     """Ensure the paperwork output folder exists for the target week."""
     folder = settings.output_dir / format_folder_date(date)
     folder.mkdir(parents=True, exist_ok=True)
+    try:
+        folder.chmod(0o775)
+    except PermissionError:
+        logger.debug("Could not adjust permissions on %s", folder)
     return folder
 
 
@@ -95,6 +100,7 @@ def convert_excel_to_pdf(excel_path: Path, output_dir: Path) -> Optional[Path]:
         cmd = [
             "libreoffice",
             "--headless",
+            f"-env:UserInstallation=file://{settings.output_dir}/.config/libreoffice",
             "--convert-to",
             "pdf",
             "--outdir",
@@ -102,7 +108,11 @@ def convert_excel_to_pdf(excel_path: Path, output_dir: Path) -> Optional[Path]:
             str(excel_path),
         ]
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=settings.libreoffice_timeout
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=settings.libreoffice_timeout,
+            env={**os.environ, "HOME": str(settings.output_dir)},
         )
         if result.returncode != 0:
             logger.warning(
@@ -116,4 +126,18 @@ def convert_excel_to_pdf(excel_path: Path, output_dir: Path) -> Optional[Path]:
         return None
 
     pdf_path = output_dir / f"{excel_path.stem}.pdf"
-    return pdf_path if pdf_path.exists() else None
+    if pdf_path.exists():
+        try:
+            pdf_path.chmod(0o664)
+        except PermissionError:
+            logger.debug("Could not adjust permissions on %s", pdf_path)
+        return pdf_path
+    return None
+
+
+def ensure_writable(path: Path) -> None:
+    """Make the given file writable by owner/group."""
+    try:
+        path.chmod(0o664)
+    except PermissionError:
+        logger.debug("Could not adjust permissions on %s", path)

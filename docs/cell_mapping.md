@@ -48,7 +48,7 @@ Files are written to `output/<DD-MM-YY>/` where `<DD-MM-YY>` is the Sunday of th
 | JSON field | Excel cell | Notes |
 |------------|------------|-------|
 | `week_ending` | E5 | Week-ending Sunday formatted as `Monday DD/MM/YY`. |
-| `driver` | H2 | Upper-cased driver name. |
+| `driver` | K3 | Upper-cased driver name. |
 | `fleet_reg` | K5 | Comma-separated list of fleet regs (duplicates removed). |
 | `start_mileage` / `end_mileage` | H4 / H5 | Free-text mileage values. |
 | `weekly_total_hours` | J29 | Overrides the sum of the daily `total_hours` when provided. |

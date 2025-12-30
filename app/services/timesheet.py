@@ -92,7 +92,7 @@ def generate_timesheet(request: TimesheetRequest) -> GenerateResponse:
     ws = wb.active
 
     ws["E5"] = format_date_for_cell(week_end)
-    driver_cell = ws["H2"]
+    driver_cell = ws["K3"]
     if isinstance(driver_cell, MergedCell):
         for merged_range in ws.merged_cells.ranges:
             if driver_cell.coordinate in merged_range:
@@ -100,7 +100,7 @@ def generate_timesheet(request: TimesheetRequest) -> GenerateResponse:
                 top_left.value = request.driver.upper()
                 break
         else:
-            ws.cell(row=2, column=8).value = request.driver.upper()
+            ws.cell(row=3, column=11).value = request.driver.upper()
     else:
         driver_cell.value = request.driver.upper()
     fleet_regs = ", ".join(dict.fromkeys([reg.upper() for reg in request.fleet_reg]))

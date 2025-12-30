@@ -71,6 +71,16 @@ A helper script is provided to build and push:
 
 Set `SKIP_PUSH=true` to keep the image local.
 
+When running the container with host-mounted volumes, use your host UID/GID to keep generated files editable:
+
+```bash
+docker run -d --user "$(id -u):$(id -g)" -p 8000:8000 \
+  -v "$PWD/output:/app/output" \
+  -v "$PWD/templates:/app/templates" \
+  -v "$PWD/signatures:/app/signatures" \
+  ghcr.io/craigst/paperworkgen:latest
+```
+
 ## Project Planning & References
 
 - Workflows, mapping rules, and data models are captured in `docs/project_plan.md` (read it before extending the API).
